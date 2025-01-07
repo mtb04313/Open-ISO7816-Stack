@@ -8,7 +8,11 @@
 #include "reader_hal.h"
 #include "reader_periph.h"
 
+#ifdef CY_TARGET_BOARD
+// PSoC Edge and PSoC6
+#include "feature_config.h"
 
+#endif
 
 /**
  * \fn READER_Status READER_HAL_InitWithDefaults(READER_HAL_CommSettings *pSettings)
@@ -61,6 +65,10 @@ READER_Status READER_HAL_SendCharFrameTickstart(READER_HAL_CommSettings *pSettin
 			characterDelay = (uint32_t)(READER_UTILS_ComputeEtuMiliFloat(READER_HAL_GetFi(pSettings), READER_HAL_GetDi(pSettings), READER_HAL_GetFreq(pSettings)) *10);
 			characterDelay = MAX(1, characterDelay);
 			
+#ifdef CY_TARGET_BOARD
+            // need to dereference the pointer!
+            *
+#endif
 			pTickstart = READER_HAL_GetTick() - characterDelay;  /*  10 ETU dans un caractere (10 moments) */
 		}
 		
@@ -73,17 +81,26 @@ READER_Status READER_HAL_SendCharFrameTickstart(READER_HAL_CommSettings *pSettin
 	
 	/* On attend le flag Transmit Complete */
 	/* Permet de bloquer la fonction pour empecher une eventuelle reception (avant d'avoir transmit complete) */
+
+#ifdef CY_TARGET_BOARD
+#ifndef TEST
+	retVal = READER_HAL_WaitUntilSendComplete(pSettings);
+#endif
+
+#else
 	
 	/* TODO: Try to move this piece of code to reader_hal_basis.c or reader_hal_comm_settings.c because it is the only hardware dependent code left in this file. */
-	#ifndef TEST
-		while(!(USART2->SR & USART_SR_TC)){
-			
-		}
-		
-		USART2->CR1 &= ~USART_CR1_TE;
-	#endif
+#ifndef TEST
+	while(!(USART2->SR & USART_SR_TC)){
+
+	}
+
+	USART2->CR1 &= ~USART_CR1_TE;
+	retVal = READER_OK;
+#endif
+#endif
 	
-	return READER_OK;
+	return retVal;
 }
 
 
@@ -231,6 +248,11 @@ READER_Status READER_HAL_DoColdReset(void){
 	retVal = READER_HAL_SetPwrLine(READER_HAL_STATE_OFF);     if(retVal != READER_OK) return retVal;
 	retVal = READER_HAL_SetClkLine(READER_HAL_STATE_OFF);     if(retVal != READER_OK) return retVal;
 	retVal = READER_HAL_SetRstLine(READER_HAL_STATE_OFF);     if(retVal != READER_OK) return retVal;
+
+#ifdef CY_TARGET_BOARD
+	retVal = READER_HAL_SetIOLine(READER_HAL_STATE_ON);       if(retVal != READER_OK) return retVal;
+	READER_HAL_Delay(1);
+#endif
 
 	/* Activation et Cold Reset */
 	READER_HAL_Delay(50);

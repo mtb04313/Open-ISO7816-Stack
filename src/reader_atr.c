@@ -7,14 +7,19 @@
 #include "reader_atr.h"
 #include "reader_hal.h"
 
+#ifdef CY_TARGET_BOARD
+// PSoC Edge and PSoC6
+#include "feature_config.h"
+#include <stdbool.h>
+#include "ifx_debug.h"
 
+static const bool s_verboseLogging = true;
+#endif
 
 /* Voir table 7 section 8.3 ISO7816_3 */
 static uint16_t globalFiConvTable[0x10] = {372, 372, 558, 744, 1116, 1488, 1860, 372, 372, 512, 768, 1024, 1536, 2048, 372, 372};
 static uint8_t  globalDiConvTable[0x10] = {1, 1, 2, 4, 8, 16, 32, 64, 12, 20, 1, 1, 1, 1, 1, 1};
 static uint32_t globalFMaxConvTable[0x10] = {4000000, 5000000, 6000000, 8000000, 12000000, 16000000, 20000000, 0xFFFFFFFF, 0xFFFFFFFF, 5000000, 7500000, 10000000, 15000000, 20000000, 0xFFFFFFFF, 0xFFFFFFFF};
-
-
 
 READER_Status READER_ATR_Receive(READER_ATR_Atr *atr, READER_HAL_CommSettings *pSettings){
 	READER_Status retVal;
@@ -29,21 +34,39 @@ READER_Status READER_ATR_Receive(READER_ATR_Atr *atr, READER_HAL_CommSettings *p
 	
 	/* Initialisation des certains elements de la structure ATR */
 	retVal = READER_ATR_InitStruct(atr);
+	if (s_verboseLogging) {
+		DEBUG_ASSERT(retVal == READER_OK);
+	}
 	if(retVal != READER_OK) return retVal;
 		
 	
 	/* Recuperation de TS */
 	retVal = READER_HAL_RcvChar(pSettings, READER_HAL_PROTOCOL_ANY, &TS, READER_ATR_DEFAULT_TIMEOUT);
+	if (s_verboseLogging) {
+		DEBUG_PRINT(("TS=%02X\n", TS));
+		DEBUG_ASSERT(retVal == READER_OK);
+    }
 	if(retVal != READER_OK) return retVal;
+
 	retVal = READER_ATR_CheckTS(TS);
+	if (s_verboseLogging) {
+		DEBUG_ASSERT(retVal == READER_OK);
+	}
 	if(retVal != READER_OK) return retVal;
 	atr->encodingConv = READER_ATR_GetEncoding(TS);
 	
 	/* Recuperation de T0 */
 	retVal = READER_HAL_RcvChar(pSettings, READER_HAL_PROTOCOL_ANY, &T0, READER_ATR_DEFAULT_TIMEOUT);
+	if (s_verboseLogging) {
+		DEBUG_PRINT(("T0=%02X\n", T0));
+		DEBUG_ASSERT(retVal == READER_OK);
+	}
 	if(retVal != READER_OK) return retVal;
 	atr->K = READER_ATR_ComputeK(T0);
 	retVal = READER_ATR_AddRcvdByte(T0, rcvdBytes, &rcvdCount);
+	if (s_verboseLogging) {
+		DEBUG_ASSERT(retVal == READER_OK);
+	}
 	if(retVal != READER_OK) return retVal;
 	
 	
@@ -52,26 +75,74 @@ READER_Status READER_ATR_Receive(READER_ATR_Atr *atr, READER_HAL_CommSettings *p
 	/* Recupertion de tous les Interfaces Bytes */
 	while(READER_ATR_IsInterfacesBytesToRead(Y)){
 		if(READER_ATR_IsTAToRead(Y)){
-			if(READER_HAL_RcvChar(pSettings, READER_HAL_PROTOCOL_ANY, &TA, READER_ATR_DEFAULT_TIMEOUT) != READER_OK) return READER_ERR;
-			if(READER_ATR_ProcessTA(atr, TA, i, T) != READER_OK) return READER_ERR;
-			if(READER_ATR_AddRcvdByte(TA, rcvdBytes, &rcvdCount) != READER_OK) return READER_ERR;
+			retVal = READER_HAL_RcvChar(pSettings, READER_HAL_PROTOCOL_ANY, &TA, READER_ATR_DEFAULT_TIMEOUT);
+			if (s_verboseLogging) {
+				DEBUG_PRINT(("TA=%02X\n", TA));
+				DEBUG_ASSERT(retVal == READER_OK);
+			}
+			if (retVal != READER_OK) return READER_ERR;
+			retVal = READER_ATR_ProcessTA(atr, TA, i, T);
+			if (s_verboseLogging) {
+				DEBUG_ASSERT(retVal == READER_OK);
+			}
+            if (retVal != READER_OK) return READER_ERR;
+			retVal = READER_ATR_AddRcvdByte(TA, rcvdBytes, &rcvdCount);
+			if (s_verboseLogging) {
+				DEBUG_ASSERT(retVal == READER_OK);
+			}
+            if (retVal != READER_OK) return READER_ERR;
 		}
 		if(READER_ATR_IsTBToRead(Y)){
-			if(READER_HAL_RcvChar(pSettings, READER_HAL_PROTOCOL_ANY, &TB, READER_ATR_DEFAULT_TIMEOUT) != READER_OK) return READER_ERR;
-			if(READER_ATR_ProcessTB(atr, TB, i, T) != READER_OK) return READER_ERR;
-			if(READER_ATR_AddRcvdByte(TB, rcvdBytes, &rcvdCount) != READER_OK) return READER_ERR;
+			retVal = READER_HAL_RcvChar(pSettings, READER_HAL_PROTOCOL_ANY, &TB, READER_ATR_DEFAULT_TIMEOUT);
+			if (s_verboseLogging) {
+				DEBUG_PRINT(("TB=%02X\n", TB));
+				DEBUG_ASSERT(retVal == READER_OK);
+			}
+            if (retVal != READER_OK) return READER_ERR;
+			retVal = READER_ATR_ProcessTB(atr, TB, i, T);
+			if (s_verboseLogging) {
+				DEBUG_ASSERT(retVal == READER_OK);
+			}
+            if (retVal != READER_OK) return READER_ERR;
+			retVal = READER_ATR_AddRcvdByte(TB, rcvdBytes, &rcvdCount);
+			if (s_verboseLogging) {
+				DEBUG_ASSERT(retVal == READER_OK);
+			}
+            if (retVal != READER_OK) return READER_ERR;
 		}
 		if(READER_ATR_IsTCToRead(Y)){
-			if(READER_HAL_RcvChar(pSettings, READER_HAL_PROTOCOL_ANY, &TC, READER_ATR_DEFAULT_TIMEOUT) != READER_OK) return READER_ERR;
-			if(READER_ATR_ProcessTC(atr, TC, i, T) != READER_OK) return READER_ERR;
-			if(READER_ATR_AddRcvdByte(TC, rcvdBytes, &rcvdCount) != READER_OK) return READER_ERR;
+			retVal = READER_HAL_RcvChar(pSettings, READER_HAL_PROTOCOL_ANY, &TC, READER_ATR_DEFAULT_TIMEOUT);
+			if (s_verboseLogging) {
+				DEBUG_PRINT(("TC=%02X\n", TC));
+				DEBUG_ASSERT(retVal == READER_OK);
+			}
+            if (retVal != READER_OK) return READER_ERR;
+			retVal = READER_ATR_ProcessTC(atr, TC, i, T);
+			if (s_verboseLogging) {
+				DEBUG_ASSERT(retVal == READER_OK);
+			}
+            if (retVal != READER_OK) return READER_ERR;
+			retVal = READER_ATR_AddRcvdByte(TC, rcvdBytes, &rcvdCount);
+			if (s_verboseLogging) {
+				DEBUG_ASSERT(retVal == READER_OK);
+			}
+            if (retVal != READER_OK) return READER_ERR;
 		}
 		if(READER_ATR_IsTDToRead(Y)){
-			if(READER_HAL_RcvChar(pSettings, READER_HAL_PROTOCOL_ANY, &TD, READER_ATR_DEFAULT_TIMEOUT) != READER_OK) return READER_ERR;
+			retVal = READER_HAL_RcvChar(pSettings, READER_HAL_PROTOCOL_ANY, &TD, READER_ATR_DEFAULT_TIMEOUT);
+			if (s_verboseLogging) {
+				DEBUG_PRINT(("TD=%02X\n", TD));
+				DEBUG_ASSERT(retVal == READER_OK);
+			}
+            if (retVal != READER_OK) return READER_ERR;
 			Y = READER_ATR_ComputeY(TD);
 			T = READER_ATR_ComputeT(TD);
 			READER_ATR_ProcessT(atr, T);
-			if(READER_ATR_AddRcvdByte(TD, rcvdBytes, &rcvdCount) != READER_OK) return READER_ERR;
+			retVal = READER_ATR_AddRcvdByte(TD, rcvdBytes, &rcvdCount);
+			if (s_verboseLogging) {
+				DEBUG_ASSERT(retVal == READER_OK);
+			}
+            if (retVal != READER_OK) return READER_ERR;
 		}
 		else{
 			Y = 0x00;
@@ -82,11 +153,18 @@ READER_Status READER_ATR_Receive(READER_ATR_Atr *atr, READER_HAL_CommSettings *p
 	/* Recuperation de tous les Historical Bytes */
 	for(j=0; j<atr->K; j++){
 		retVal = READER_HAL_RcvChar(pSettings, READER_HAL_PROTOCOL_ANY, &byte, READER_ATR_DEFAULT_TIMEOUT);
+		if (s_verboseLogging) {
+			DEBUG_PRINT(("byte=%02X\n", byte));
+			DEBUG_ASSERT(retVal == READER_OK);
+		}
 		if(retVal != READER_OK) return retVal;
 		
 		atr->histBytes[j] = byte;
 		
 		retVal = READER_ATR_AddRcvdByte(byte, rcvdBytes, &rcvdCount);
+		if (s_verboseLogging) {
+			DEBUG_ASSERT(retVal == READER_OK);
+		}
 		if(retVal != READER_OK) return retVal;
 	}
 	
@@ -95,10 +173,17 @@ READER_Status READER_ATR_Receive(READER_ATR_Atr *atr, READER_HAL_CommSettings *p
 	/* La presence du check byte n'est pas systematique, voir ISO7816-3 section 8.2.5. */
 	if(!(READER_ATR_IsT0(atr) && !READER_ATR_IsT15(atr))){
 		retVal = READER_HAL_RcvChar(pSettings, READER_HAL_PROTOCOL_ANY, &checkByte, READER_ATR_DEFAULT_TIMEOUT);
+		if (s_verboseLogging) {
+			DEBUG_PRINT(("checkByte=%02X\n", checkByte));
+			DEBUG_ASSERT(retVal == READER_OK);
+		}
 		if(retVal != READER_OK) return retVal;	
 		
 		/* Verification des caracteres recus avec le TCK */
-		retVal = READER_ATR_CheckTCK(rcvdBytes, rcvdCount, checkByte);	
+		retVal = READER_ATR_CheckTCK(rcvdBytes, rcvdCount, checkByte);
+		if (s_verboseLogging) {
+			DEBUG_ASSERT(retVal == READER_OK);
+		}
 		if(retVal != READER_OK) return retVal;
 	}
 	
@@ -375,7 +460,7 @@ READER_Status READER_ATR_ProcessTB(READER_ATR_Atr *atr, uint8_t TB, uint32_t i, 
 	if((i == 1) || (i == 2)){
 		return READER_OK;        /* TB1 et TB2 sont deprecated voir section 8.3  ISO7816_3. Ils doivent etre ignores */
 	}
-	else if(TB == 15){
+	else if(T == 15){	/* Global Interface Byte */
 		atr->useOfSPU = READER_ATR_GetUseSPU(TB);
 	}
 	else if(T == 0){

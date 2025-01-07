@@ -18,13 +18,18 @@
 
 #define READER_HAL_DEFAULT_FI         (uint32_t)(372)
 #define READER_HAL_DEFAULT_DI         (uint32_t)(1)
-#define READER_HAL_DEFAULT_FREQ       (uint32_t)(4200000)
+
 #define READER_HAL_DEFAULT_GT         (uint32_t)(12)
 
 #ifdef TARGET_STM32F411
+    #define READER_HAL_DEFAULT_FREQ       (uint32_t)(4200000)
 	#define READER_HAL_STM32_SYSCLK       (uint32_t)(100000000)
 #elif TARGET_STM32F407
+    #define READER_HAL_DEFAULT_FREQ       (uint32_t)(4200000)
 	#define READER_HAL_STM32_SYSCLK       (uint32_t)(168000000)
+#elif defined CY_TARGET_BOARD
+    // PSoC Edge and PSoC6
+    #define READER_HAL_DEFAULT_FREQ       (uint32_t)(5000000)   // 5MHz: this is actually set in Device Configurator and both values must match
 #else
 	#ifndef TEST
 	#error No target is defined. Impossible to go through compilation. Please define a target by setting a constant in the style TARGET_STM32F411 or TARGET_STM32F407. See documentation for the list of supported targets.

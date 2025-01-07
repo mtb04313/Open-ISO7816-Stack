@@ -8,6 +8,13 @@
 #include "reader_t0_context_handler.h"
 #include "reader_hal_comm_settings.h"
 
+#if defined CY_TARGET_BOARD
+#include <stdbool.h>
+#include "ifx_debug.h"
+
+static const bool s_verboseLogging = true;
+#endif
+
 
 
 /**
@@ -96,7 +103,10 @@ READER_Status READER_T0_APDU_ExecuteCase1(READER_T0_ContextHandler *pContext, RE
 	READER_Status retVal;
 	uint32_t timeout;
 	
-	
+	if (s_verboseLogging) {
+		DEBUG_PRINT(("%s [%d]\n", __FUNCTION__, __LINE__));
+	}
+
 	/* Recuperation d'un pointeur sur les parametres de comm bas niveau actuellement utilises ...  */
 	retVal = READER_T0_CONTEXT_GetHalCommSettingsPtr(pContext, &pSettings);
 	if(retVal != READER_OK) return retVal;
@@ -153,7 +163,10 @@ READER_Status READER_T0_APDU_ExecuteCase2S(READER_T0_ContextHandler *pContext, R
 	uint8_t Na, Ne;
 	uint32_t timeout;
 	
-	
+	if (s_verboseLogging) {
+		DEBUG_PRINT(("%s [%d]\n", __FUNCTION__, __LINE__));
+	}
+
 	/* Recuperation d'un pointeur sur les parametres de comm bas niveau actuellement utilises ...  */
 	retVal = READER_T0_CONTEXT_GetHalCommSettingsPtr(pContext, &pSettings);
 	if(retVal != READER_OK) return retVal;
@@ -250,7 +263,10 @@ READER_Status READER_T0_APDU_ExecuteCase3S(READER_T0_ContextHandler *pContext, R
 	READER_Status retVal;
 	uint32_t timeout;
 	
-	
+	if (s_verboseLogging) {
+		DEBUG_PRINT(("%s [%d]\n", __FUNCTION__, __LINE__));
+	}
+
 	/* Recuperation d'un pointeur sur les parametres de comm bas niveau actuellement utilises ...  */
 	retVal = READER_T0_CONTEXT_GetHalCommSettingsPtr(pContext, &pSettings);
 	if(retVal != READER_OK) return retVal;
@@ -316,7 +332,10 @@ READER_Status READER_T0_APDU_ExecuteCase3E(READER_T0_ContextHandler *pContext, R
 	uint32_t nbSegments, nbResidualBytes;
 	uint32_t timeout;
 	
-	
+	if (s_verboseLogging) {
+		DEBUG_PRINT(("%s [%d]\n", __FUNCTION__, __LINE__));
+	}
+
 	/* Recuperation d'un pointeur sur les parametres de comm bas niveau actuellement utilises ...  */
 	retVal = READER_T0_CONTEXT_GetHalCommSettingsPtr(pContext, &pSettings);
 	if(retVal != READER_OK) return retVal;
@@ -464,7 +483,10 @@ READER_Status READER_T0_APDU_ExecuteCase2E(READER_T0_ContextHandler *pContext, R
 	uint32_t i;
 	uint32_t timeout;
 	
-	
+	if (s_verboseLogging) {
+		DEBUG_PRINT(("%s [%d]\n", __FUNCTION__, __LINE__));
+	}
+
 	/* Recuperation d'un pointeur sur les parametres de comm bas niveau actuellement utilises ...  */
 	retVal = READER_T0_CONTEXT_GetHalCommSettingsPtr(pContext, &pSettings);
 	if(retVal != READER_OK) return retVal;
@@ -593,6 +615,9 @@ READER_Status READER_T0_APDU_ExecuteCase4S(READER_T0_ContextHandler *pContext, R
 	uint32_t Na, Ne;
 	uint32_t timeout;
 	
+	if (s_verboseLogging) {
+		DEBUG_PRINT(("%s [%d]\n", __FUNCTION__, __LINE__));
+	}
 
 	/* Recuperation d'un pointeur sur les parametres de comm bas niveau actuellement utilises ...  */
 	retVal = READER_T0_CONTEXT_GetHalCommSettingsPtr(pContext, &pSettings);
@@ -674,7 +699,10 @@ READER_Status READER_T0_APDU_ExecuteCase4E(READER_T0_ContextHandler *pContext, R
 	READER_HAL_CommSettings *pSettings;
 	READER_Status retVal;
 	
-	
+	if (s_verboseLogging) {
+		DEBUG_PRINT(("%s [%d]\n", __FUNCTION__, __LINE__));
+	}
+
 	/* Recuperation d'un pointeur sur les parametres de comm bas niveau actuellement utilises ...  */
 	retVal = READER_T0_CONTEXT_GetHalCommSettingsPtr(pContext, &pSettings);
 	if(retVal != READER_OK) return retVal;

@@ -9,12 +9,22 @@
 #include "stdint.h"
 #include "reader.h"
 #include "reader_utils.h"
+
+#ifdef CY_TARGET_BOARD
+// PSoC Edge and PSoC6
+#include "feature_config.h"
+#include "ifx_hal.h"
+#include "ifx_debug.h"
+
+#else
+// STM32
 #include "stm32f4xx_hal.h"
 
 
 
 extern SMARTCARD_HandleTypeDef smartcardHandleStruct;
 
+#endif
 
 /**
  * \fn READER_HAL_SetFreq(READER_HAL_CommSettings *pSettings, uint32_t newFreq)
@@ -26,8 +36,34 @@ extern SMARTCARD_HandleTypeDef smartcardHandleStruct;
 READER_Status READER_HAL_SetFreq(READER_HAL_CommSettings *pSettings, uint32_t newFreq){
 	uint32_t oldFreq, oldBaudRate;
 	uint32_t newBaudRate;
-	
-	
+
+#ifdef CY_TARGET_BOARD
+// PSoC Edge and PSoC6
+	DEBUG_PRINT(("%s [%d]: newFreq=%lu\n", __FUNCTION__, __LINE__, newFreq));
+
+#if (FEATURE_PWM_HAL == ENABLE_FEATURE)
+	cy_rslt_t result;
+
+	/* Set the PWM output frequency and duty cycle */
+	result = cyhal_pwm_set_duty_cycle(&s_pwmClkControl, PWM_DUTY_CYCLE, newFreq);
+	VoidAssert(result == CY_RSLT_SUCCESS);
+
+#else
+	// freq and duty cycle are set using Device Configurator
+#endif
+
+	// REVISIT: don't allow freq to be changed
+	oldFreq = HAL_GetDefaultPwmClkfreq();
+	DEBUG_ASSERT(oldFreq == newFreq);
+
+	newBaudRate = oldBaudRate = HAL_GetDefaultUartBaudRate();
+
+	HAL_SetBitRate(	0,   // slotNumber
+					newFreq,
+					newBaudRate);
+
+#else
+// STM32
 	/* On recupere la frequence et la baudrate actuel. Peut aussi etre recupere a partir des infos de *currentSettings */
 	oldFreq = READER_UTILS_GetCardFreq(READER_HAL_STM32_SYSCLK, READER_HAL_STM32_AHB_PRESC, READER_HAL_STM32_APB1_PRESC, smartcardHandleStruct.Init.Prescaler);
 	oldBaudRate = smartcardHandleStruct.Init.BaudRate;
@@ -38,7 +74,8 @@ READER_Status READER_HAL_SetFreq(READER_HAL_CommSettings *pSettings, uint32_t ne
 	smartcardHandleStruct.Init.Prescaler = READER_HAL_ComputePrescFromFreq(newFreq);
 	
 	if(HAL_SMARTCARD_Init(&smartcardHandleStruct) != HAL_OK) return READER_ERR;
-	
+#endif
+
 	/* Mise a jour des informations dans la structure qui contient les parametres de communication */
 	pSettings->f = newFreq;
 	
@@ -57,6 +94,14 @@ READER_Status READER_HAL_SetFreq(READER_HAL_CommSettings *pSettings, uint32_t ne
 READER_Status READER_HAL_SetEtu(READER_HAL_CommSettings *pSettings, uint32_t Fi, uint32_t Di){
 	uint32_t freq, newBaudRate;
 	
+#ifdef CY_TARGET_BOARD
+// PSoC Edge and PSoC6
+	DEBUG_PRINT(("%s [%d]: Fi=%lu, Di=%lu\n", __FUNCTION__, __LINE__, Fi, Di));
+	(void)freq;
+	(void)newBaudRate;
+
+#else
+// STM32
 	/* On recupere les parametres de communication actuels. On aurait aussi pu le faire a partir de la structure globalCurrentSettings */
 	freq = READER_UTILS_GetCardFreq(READER_HAL_STM32_SYSCLK, READER_HAL_STM32_AHB_PRESC, READER_HAL_STM32_APB1_PRESC, smartcardHandleStruct.Init.Prescaler);
 	
@@ -67,12 +112,13 @@ READER_Status READER_HAL_SetEtu(READER_HAL_CommSettings *pSettings, uint32_t Fi,
 	/* On applique les changements au bloc materiel USART */
 	smartcardHandleStruct.Init.BaudRate = newBaudRate;
 	if(HAL_SMARTCARD_Init(&smartcardHandleStruct) != HAL_OK) return READER_ERR;
-	
+#endif
+
 	/* On met a jour la structure globalCurrentSettings */
 	pSettings->Fi = Fi;
 	pSettings->Di = Di;
-	
-	return READER_OK;	
+
+	return READER_OK;
 }
 
 
@@ -86,13 +132,15 @@ READER_Status READER_HAL_SetEtu(READER_HAL_CommSettings *pSettings, uint32_t Fi,
 READER_Status READER_HAL_SetFi(READER_HAL_CommSettings *pSettings, uint32_t Fi){
 	READER_Status retVal;
 	uint32_t Di;
-	
+
+	DEBUG_PRINT(("%s [%d]: Fi=%lu\n", __FUNCTION__, __LINE__, Fi));
+
 	Di = READER_HAL_GetDi(pSettings);
 	retVal = READER_HAL_SetEtu(pSettings, Fi, Di);
 	if(retVal != READER_OK) return retVal;
-	
+
 	pSettings->Fi = Fi;
-	
+
 	return READER_OK;
 }
 
@@ -107,13 +155,15 @@ READER_Status READER_HAL_SetFi(READER_HAL_CommSettings *pSettings, uint32_t Fi){
 READER_Status READER_HAL_SetDi(READER_HAL_CommSettings *pSettings, uint32_t Di){
 	READER_Status retVal;
 	uint32_t Fi;
-	
+
+	DEBUG_PRINT(("%s [%d]: Di=%lu\n", __FUNCTION__, __LINE__, Di));
+
 	Fi = READER_HAL_GetFi(pSettings);
 	retVal = READER_HAL_SetEtu(pSettings, Fi, Di);
 	if(retVal != READER_OK) return retVal;
-	
+
 	pSettings->Di = Di;
-	
+
 	return READER_OK;
 }
 
@@ -126,14 +176,22 @@ READER_Status READER_HAL_SetDi(READER_HAL_CommSettings *pSettings, uint32_t Di){
  * This function configures the GT (Guard Time) to be used when communication over the I/O transmission line. See ISO/IEC7816-3 section 7.2.
  */
 READER_Status READER_HAL_SetGT(READER_HAL_CommSettings *pSettings, uint32_t newGT){
+	DEBUG_PRINT(("%s [%d]: newGT=%lu\n", __FUNCTION__, __LINE__, newGT));
+
 	if(newGT < 12) return READER_ERR;
-	
+
+#ifdef CY_TARGET_BOARD
+// PSoC Edge and PSoC6
+	// REVISIT: do nothing for now
+
+#else
+// STM32
 	smartcardHandleStruct.Init.GuardTime = newGT;
 	
 	if(HAL_SMARTCARD_Init(&smartcardHandleStruct) != HAL_OK) return READER_ERR;
-	
+
+#endif
 	pSettings->GT = newGT;
-	
 	return READER_OK;	
 }
 
@@ -242,6 +300,16 @@ uint32_t READER_HAL_ComputePrescFromFreq(uint32_t freq){
 			return SMARTCARD_PRESCALER_SYSCLK_DIV10;
 	}
 }
+
+#elif defined CY_TARGET_BOARD
+// PSoC Edge and PSoC6
+
+uint32_t READER_HAL_ComputePrescFromFreq(uint32_t freq){
+	DEBUG_PRINT(("%s [%d]: freq=%lu\n", __FUNCTION__, __LINE__, freq));
+
+	return 0;
+}
+
 #else
 	#ifndef TEST
 	#error No target is defined. Impossible to go through compilation. Please define a target by setting a constant in the style TARGET_STM32F411 or TARGET_STM32F407. See documentation for the list of supported targets.

@@ -9,11 +9,26 @@
 
 #include "reader_hal_basis.h"
 #include "reader_periph.h"
+
+#ifdef CY_TARGET_BOARD
+// PSoC Edge and PSoC6
+#include "feature_config.h"
+#include "ifx_hal.h"
+#include "ifx_hal_psoc6.h"
+#include "ifx_debug.h"
+#include "ifx_time.h"
+
+#if (FEATURE_PWM_HAL == ENABLE_FEATURE) || (FEATURE_GPIO_HAL == ENABLE_FEATURE)
+#include "cyhal.h"
+#endif
+#include "cybsp.h"
+
+#else
+// STM32
 #include "stm32f4xx_hal.h"
 
-
-
 SMARTCARD_HandleTypeDef smartcardHandleStruct;
+#endif
 
 
 /**
@@ -23,6 +38,13 @@ SMARTCARD_HandleTypeDef smartcardHandleStruct;
  * It contains define flags to be adjusted depending on the stm32 target being in use. It is recommend to set those flag directly from the Makfile by following the instructions in the README file.
  */
 READER_Status READER_HAL_InitHardware(void){	
+#ifdef CY_TARGET_BOARD
+// PSoC Edge and PSoC6
+	DEBUG_PRINT(("%s [%d]\n", __FUNCTION__, __LINE__));
+	// Do nothing
+
+#else
+// STM32
 	RCC_ClkInitTypeDef RCC_ClkInitStruct;
 	RCC_OscInitTypeDef RCC_OscInitStruct;
 	
@@ -61,6 +83,7 @@ READER_Status READER_HAL_InitHardware(void){
 	RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV2; 
 	
 	HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_5);   // Attention pas de valeur de retour
+#endif
 	
 	/* Initialisation de tous les peripheriques materiels                                      */
 	if(READER_PERIPH_Init() != READER_OK) return READER_ERR;
@@ -95,6 +118,25 @@ READER_Status READER_HAL_RcvChar(READER_HAL_CommSettings *pSettings, READER_HAL_
 		return READER_BAD_ARG;
 	}
 	
+#ifdef CY_TARGET_BOARD
+// PSoC Edge and PSoC6
+	(void)dummy;    // suppressed warning; what's dummy used for?
+
+	tickstart = READER_HAL_GetTick();
+	currentGTMilli = READER_HAL_GetGTMili(pSettings);
+	newTimeout = timeout + currentGTMilli;
+
+	do {
+		if (Cy_SCB_UART_GetNumInRxFifo(ISO_UART_HW) > 0) {
+			*character = Cy_SCB_UART_Get(ISO_UART_HW);
+			return READER_OK;
+		}
+	} while ((READER_HAL_GetTick() - tickstart) < newTimeout);
+
+	return READER_TIMEOUT;
+
+#else
+// STM32
 	/* Si on a un overrun ici, c'est que des carateres parasites sont arrives avant que l'on commence a recevoir. On les elimine ...  */
 	if(USART2->SR & USART_SR_ORE){
 		dummy = USART2->DR;
@@ -139,6 +181,7 @@ READER_Status READER_HAL_RcvChar(READER_HAL_CommSettings *pSettings, READER_HAL_
 	
 	/* On desactive la partie reception de l'USART. Cela evite d'avoir des Overrun si on recoit des caracteres inattendus */
 	USART2->CR1 &= ~USART_CR1_RE;
+#endif
 	
 	return READER_OK;
 }
@@ -162,6 +205,38 @@ READER_Status READER_HAL_SendChar(READER_HAL_CommSettings *pSettings, READER_HAL
 		return READER_BAD_ARG;
 	}
 	
+#ifdef CY_TARGET_BOARD
+// PSoC Edge and PSoC6
+    // REVISIT: wait for guard time to elapse before sending
+	(void)tickstart;
+	(void)guardTime;
+
+	do {
+		if (Cy_SCB_UART_Put(ISO_UART_HW, character) == 1) {
+			while (!Cy_SCB_IsTxComplete(ISO_UART_HW));
+			break;
+		}
+	} while (true);
+
+	// read the echo
+	uint8_t dataEcho = 0x00;
+
+	if (READER_HAL_RcvChar(pSettings, protocol, &dataEcho, 1000) != READER_OK) {
+		DEBUG_PRINT(("%s [%d] %s\n", __FUNCTION__, __LINE__, "READER_HAL_RcvChar failed"));
+		return READER_TIMEOUT;
+	}
+
+	if (dataEcho == character) {
+		return READER_OK;
+	} else {
+		DEBUG_PRINT(("%s [%d] dataEcho=0x%02x, bt=0x%02x, %s\n",
+					__FUNCTION__, __LINE__, dataEcho, character, "dataEcho != bt"));
+	}
+
+	return READER_TIMEOUT;
+
+#else
+// STM32
 	/* On active le bloc USART */
 	USART2->CR1 |= USART_CR1_UE;
 	
@@ -202,6 +277,7 @@ READER_Status READER_HAL_SendChar(READER_HAL_CommSettings *pSettings, READER_HAL
 	/* On reactive la reception une fois l'envoi termine */
 	/* ... En fait on ne peut pas le reactiver ici : Il faudrait en realite le faire uniquement lorsque TC (transmit complete). Or, ici on a fait le choix de quitter la fonction avant TC. */
 	//USART2->CR1 |= USART_CR1_RE;
+#endif
 	
 	return READER_OK;
 }
@@ -214,6 +290,34 @@ READER_Status READER_HAL_SendChar(READER_HAL_CommSettings *pSettings, READER_HAL
  * \param state paramètre de type READER_HAL_State. Peut prendre les valeurs READER_HAL_STATE_ON et READER_HAL_STATE_OFF. Indique l'état à imposer à la broche.
  */
 READER_Status READER_HAL_SetPwrLine(READER_HAL_State state){
+#ifdef CY_TARGET_BOARD
+// PSoC Edge and PSoC6
+	DEBUG_PRINT(("%s [%d]: %s\n", __FUNCTION__, __LINE__, (state == READER_HAL_STATE_ON)? "ON" : "OFF"));
+
+	if(state == READER_HAL_STATE_ON){
+#ifdef ISO7816_VCC
+#if (FEATURE_GPIO_HAL == ENABLE_FEATURE)
+		cyhal_gpio_write(ISO7816_VCC, ISO7816_VCC_ON);
+#else
+		Cy_GPIO_Write(ISO7816_VCC_PORT, ISO7816_VCC_PIN, ISO7816_VCC_ON);
+#endif
+#endif
+	}
+	else if(state == READER_HAL_STATE_OFF){
+#ifdef ISO7816_VCC
+#if (FEATURE_GPIO_HAL == ENABLE_FEATURE)
+		cyhal_gpio_write(ISO7816_VCC, ISO7816_VCC_OFF);
+#else
+		Cy_GPIO_Write(ISO7816_VCC_PORT, ISO7816_VCC_PIN, ISO7816_VCC_OFF);
+#endif
+#endif
+	}
+	else{
+		return READER_ERR;
+	}
+
+#else
+// STM32
 	if(state == READER_HAL_STATE_ON){
 		HAL_GPIO_WritePin(GPIOA, READER_PERIPH_PWR_PIN, GPIO_PIN_SET);
 	}
@@ -223,6 +327,7 @@ READER_Status READER_HAL_SetPwrLine(READER_HAL_State state){
 	else{
 		return READER_ERR;
 	}
+#endif
 	
 	return READER_OK;
 }
@@ -236,6 +341,30 @@ READER_Status READER_HAL_SetPwrLine(READER_HAL_State state){
  * \param state paramètre de type READER_HAL_State. Peut prendre les valeurs READER_HAL_STATE_ON et READER_HAL_STATE_OFF. Indique l'état à imposer à la broche.
  */
 READER_Status READER_HAL_SetRstLine(READER_HAL_State state){
+#ifdef CY_TARGET_BOARD
+// PSoC Edge and PSoC6
+	DEBUG_PRINT(("%s [%d]: %s\n", __FUNCTION__, __LINE__, (state == READER_HAL_STATE_ON)? "ON" : "OFF"));
+
+	if(state == READER_HAL_STATE_ON){
+#if (FEATURE_GPIO_HAL == ENABLE_FEATURE)
+		cyhal_gpio_write(ISO7816_RESET, ISO7816_RESET_ON);
+#else
+		Cy_GPIO_Write(ISO7816_RESET_PORT, ISO7816_RESET_PIN, ISO7816_RESET_ON);
+#endif
+	}
+	else if(state == READER_HAL_STATE_OFF){
+#if (FEATURE_GPIO_HAL == ENABLE_FEATURE)
+		cyhal_gpio_write(ISO7816_RESET, ISO7816_RESET_OFF);
+#else
+		Cy_GPIO_Write(ISO7816_RESET_PORT, ISO7816_RESET_PIN, ISO7816_RESET_OFF);
+#endif
+	}
+	else{
+		return READER_ERR;
+	}
+
+#else
+// STM32
 	if(state == READER_HAL_STATE_ON){
 		HAL_GPIO_WritePin(READER_PERIPH_RST_PORT, READER_PERIPH_RST_PIN, GPIO_PIN_SET);
 	}
@@ -245,7 +374,7 @@ READER_Status READER_HAL_SetRstLine(READER_HAL_State state){
 	else{
 		return READER_ERR;
 	}
-	
+#endif
 	return READER_OK;
 }
 
@@ -260,6 +389,27 @@ READER_Status READER_HAL_SetIOLine(READER_HAL_State state){
 	/* On veut forcer l'etat de la ligne IO, donc on deconnecte le GPIO du bloc USART. PB: Quand est ce que on rend la main au bloc usart ? */
 	/* Peut etre possible de pull down la ligne meme lorsque l'UART est dessus */
 	
+#ifdef CY_TARGET_BOARD
+// PSoC Edge and PSoC6
+	DEBUG_PRINT(("%s [%d]: %s\n", __FUNCTION__, __LINE__, (state == READER_HAL_STATE_ON)? "ON" : "OFF"));
+
+	if(state == READER_HAL_STATE_ON){
+		/* Enable UART to operate */
+		Cy_SCB_UART_Enable(ISO_UART_HW);
+
+		/* Clear UART buffer */
+		Cy_SCB_UART_ClearRxFifo(ISO_UART_HW);
+	}
+	else if(state == READER_HAL_STATE_OFF){
+		/* Stop UART */
+		Cy_SCB_UART_Disable(ISO_UART_HW, NULL); //&s_uartContext);
+	}
+	else{
+		return READER_ERR;
+	}
+
+#else
+// STM32
 	if(state == READER_HAL_STATE_ON){
 		/*  ... Chgt alternate fct, chgt etat ... mais apres la main par l'uart est perdue */
 		HAL_GPIO_WritePin(READER_PERIPH_IO_PORT, READER_PERIPH_IO_PIN, GPIO_PIN_SET);
@@ -270,7 +420,7 @@ READER_Status READER_HAL_SetIOLine(READER_HAL_State state){
 	else{
 		return READER_ERR;
 	}
-	
+#endif
 	return READER_OK;
 }
 
@@ -282,6 +432,43 @@ READER_Status READER_HAL_SetIOLine(READER_HAL_State state){
  * \param state paramètre de type READER_HAL_State. Peut prendre les valeurs READER_HAL_STATE_ON et READER_HAL_STATE_OFF. Indique l'état à imposer à la broche.
  */
 READER_Status READER_HAL_SetClkLine(READER_HAL_State state){
+#ifdef CY_TARGET_BOARD
+// PSoC Edge and PSoC6
+	DEBUG_PRINT(("%s [%d]: %s\n", __FUNCTION__, __LINE__, (state == READER_HAL_STATE_ON)? "ON" : "OFF"));
+
+	if(state == READER_HAL_STATE_ON){
+#if (FEATURE_PWM_HAL == ENABLE_FEATURE)
+		cy_rslt_t result = ~CY_RSLT_SUCCESS;
+		/* Start the PWM using HAL APIs */
+		result = cyhal_pwm_start(&s_pwmClkControl);
+		ReturnAssert(result == CY_RSLT_SUCCESS, false);
+
+#else
+		/* Start the PWM using PDL APIs */
+		Cy_TCPWM_Enable_Single(ISO_TCPWM_HW, ISO_TCPWM_NUM);
+		Cy_TCPWM_TriggerStart_Single(ISO_TCPWM_HW, ISO_TCPWM_NUM);
+#endif
+	}
+	else if(state == READER_HAL_STATE_OFF){
+#if (FEATURE_PWM_HAL == ENABLE_FEATURE)
+		/* Stop the PWM using HAL APIs */
+		//if (s_pwmGpioInitialized) {
+			result = cyhal_pwm_stop(&s_pwmClkControl);
+			ReturnAssert(result == CY_RSLT_SUCCESS, false);
+		//}
+#else
+		/* Stop the PWM using PDL APIs */
+		//if (s_pwmGpioInitialized) {
+			Cy_TCPWM_Disable_Single(ISO_TCPWM_HW, ISO_TCPWM_NUM);
+		//}
+#endif
+	}
+	else{
+		return READER_ERR;
+	}
+
+#else
+// STM32
 	GPIO_InitTypeDef gpioInitStruct;
 	
 	if(state == READER_HAL_STATE_ON){
@@ -309,17 +496,32 @@ READER_Status READER_HAL_SetClkLine(READER_HAL_State state){
 	else{
 		return READER_ERR;
 	}
-	
+
+#endif
 	return READER_OK;
 }
 
 
 void READER_HAL_Delay(uint32_t tMili){
+#ifdef CY_TARGET_BOARD
+// PSoC Edge and PSoC6
+	msleep(tMili);
+#else
+// STM32
 	HAL_Delay(tMili);
+#endif
 }
 
 uint32_t READER_HAL_GetTick(void){
+#ifdef CY_TARGET_BOARD
+// PSoC Edge and PSoC6
+	return current_time();
+
+#else
+// STM32
 	return (uint32_t)HAL_GetTick();
+
+#endif
 }
 
 
@@ -330,7 +532,13 @@ uint32_t READER_HAL_GetTick(void){
  * \return This function returns an #HAL_Status execution code.
  */
 READER_Status READER_HAL_WaitUntilSendComplete(READER_HAL_CommSettings *pSettings){
+#ifdef CY_TARGET_BOARD
+// PSoC Edge and PSoC6
+	while (!Cy_SCB_IsTxComplete(ISO_UART_HW));
+#else
+// STM32
 	while(!(USART2->SR & USART_SR_TC));
-	
+#endif
+
 	return READER_OK;
 }
