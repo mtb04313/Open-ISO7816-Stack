@@ -39,6 +39,9 @@ READER_Status READER_TPDU_Send(READER_TPDU_Command *pTpduCmd, READER_TPDU_Respon
 	retVal = READER_TPDU_SendHeader(pTpduCmd, timeout, pSettings);
 	if(retVal != READER_OK) return retVal;
 	
+#ifdef CY_TARGET_BOARD
+	READER_HAL_Delay(250);	// add a delay
+#endif
 	
 	/* Attente d'une reponse ACK ... */
 	retVal = READER_TPDU_WaitACK(pTpduCmd->headerField.INS, &ACKType, &SW1, &SW2, timeout, pSettings);

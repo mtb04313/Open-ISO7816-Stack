@@ -185,7 +185,7 @@ READER_Status READER_T1_ERR_PrepareResynchRequ(READER_T1_ContextHandler *pContex
 READER_Status READER_T1_ERR_DoResynch(READER_T1_ContextHandler *pContext){
 	READER_T1_Block *pLastBlock;
 	READER_T1_Block tmpBlock;
-	READER_T1_BlockType bType;
+	READER_T1_BlockType bType = READER_T1_BLOCK_ERR;	// fixed uninitialized variable warning
 	READER_Status retVal, retVal2;
 	uint8_t rawDataBuff[READER_T1_BUFFER_MAXBYTES];
 	uint32_t saveResynchCounter;

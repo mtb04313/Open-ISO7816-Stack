@@ -408,7 +408,7 @@ READER_Status READER_T1_CONTROL_SBlockSentUpdateContext(READER_T1_ContextHandler
 READER_Status READER_T1_CONTROL_SBlockRequestSentUpdateContext(READER_T1_ContextHandler *pContext, READER_T1_Block *pBlock){
 	READER_Status retVal;
 	READER_T1_SBlockType SBlockType, expectedSBlockType;
-	uint8_t expectedINF;
+	uint8_t expectedINF = 0;	// fixed uninitialized variable warning
 	
 	
 	/* On fait des verifications elementaires sur le Block ...  */

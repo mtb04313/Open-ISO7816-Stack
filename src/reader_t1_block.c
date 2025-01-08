@@ -305,6 +305,11 @@ READER_Status READER_T1_SetBlockData(READER_T1_Block *pBlock, uint8_t *data, uin
 	retVal = READER_T1_UpdateBlockChecksum(pBlock);
 	if(retVal != READER_OK) return retVal;
 	
+	// suppressed warning: variable set but not used
+	(void)pBlockData;
+	(void)tmpLRC;
+	(void)tmpCRC;
+
 	return READER_OK;
 }
 

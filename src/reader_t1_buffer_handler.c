@@ -491,7 +491,7 @@ READER_Status READER_T1_BUFFER_SetLength(READER_T1_ContextHandler *pContext, uin
 READER_Status READER_T1_BUFFER_StripControlBlocks(READER_T1_ContextHandler *pContext){
 	READER_Status retVal, retVal2;
 	READER_T1_Block tmpBlock;
-	READER_T1_BlockType bType;
+	READER_T1_BlockType bType = READER_T1_BLOCK_ERR;	// fixed uninitialized variable warning
 	
 	
 	/* On depile les Blocks jusqu'au premier I-Block                               */

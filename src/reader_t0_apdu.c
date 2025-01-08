@@ -160,7 +160,7 @@ READER_Status READER_T0_APDU_ExecuteCase2S(READER_T0_ContextHandler *pContext, R
 	READER_TPDU_Response tpduResp;
 	READER_HAL_CommSettings *pSettings;
 	READER_Status retVal;
-	uint8_t Na, Ne;
+	uint32_t /* was uint8_t */ Na, Ne;
 	uint32_t timeout;
 	
 	if (s_verboseLogging) {

@@ -44,14 +44,10 @@ READER_Status READER_ATR_Receive(READER_ATR_Atr *atr, READER_HAL_CommSettings *p
 	retVal = READER_HAL_RcvChar(pSettings, READER_HAL_PROTOCOL_ANY, &TS, READER_ATR_DEFAULT_TIMEOUT);
 	if (s_verboseLogging) {
 		DEBUG_PRINT(("TS=%02X\n", TS));
-		DEBUG_ASSERT(retVal == READER_OK);
     }
 	if(retVal != READER_OK) return retVal;
 
 	retVal = READER_ATR_CheckTS(TS);
-	if (s_verboseLogging) {
-		DEBUG_ASSERT(retVal == READER_OK);
-	}
 	if(retVal != READER_OK) return retVal;
 	atr->encodingConv = READER_ATR_GetEncoding(TS);
 	
@@ -59,14 +55,10 @@ READER_Status READER_ATR_Receive(READER_ATR_Atr *atr, READER_HAL_CommSettings *p
 	retVal = READER_HAL_RcvChar(pSettings, READER_HAL_PROTOCOL_ANY, &T0, READER_ATR_DEFAULT_TIMEOUT);
 	if (s_verboseLogging) {
 		DEBUG_PRINT(("T0=%02X\n", T0));
-		DEBUG_ASSERT(retVal == READER_OK);
 	}
 	if(retVal != READER_OK) return retVal;
 	atr->K = READER_ATR_ComputeK(T0);
 	retVal = READER_ATR_AddRcvdByte(T0, rcvdBytes, &rcvdCount);
-	if (s_verboseLogging) {
-		DEBUG_ASSERT(retVal == READER_OK);
-	}
 	if(retVal != READER_OK) return retVal;
 	
 	
@@ -78,18 +70,11 @@ READER_Status READER_ATR_Receive(READER_ATR_Atr *atr, READER_HAL_CommSettings *p
 			retVal = READER_HAL_RcvChar(pSettings, READER_HAL_PROTOCOL_ANY, &TA, READER_ATR_DEFAULT_TIMEOUT);
 			if (s_verboseLogging) {
 				DEBUG_PRINT(("TA=%02X\n", TA));
-				DEBUG_ASSERT(retVal == READER_OK);
 			}
 			if (retVal != READER_OK) return READER_ERR;
 			retVal = READER_ATR_ProcessTA(atr, TA, i, T);
-			if (s_verboseLogging) {
-				DEBUG_ASSERT(retVal == READER_OK);
-			}
             if (retVal != READER_OK) return READER_ERR;
 			retVal = READER_ATR_AddRcvdByte(TA, rcvdBytes, &rcvdCount);
-			if (s_verboseLogging) {
-				DEBUG_ASSERT(retVal == READER_OK);
-			}
             if (retVal != READER_OK) return READER_ERR;
 		}
 		if(READER_ATR_IsTBToRead(Y)){
@@ -100,48 +85,31 @@ READER_Status READER_ATR_Receive(READER_ATR_Atr *atr, READER_HAL_CommSettings *p
 			}
             if (retVal != READER_OK) return READER_ERR;
 			retVal = READER_ATR_ProcessTB(atr, TB, i, T);
-			if (s_verboseLogging) {
-				DEBUG_ASSERT(retVal == READER_OK);
-			}
             if (retVal != READER_OK) return READER_ERR;
 			retVal = READER_ATR_AddRcvdByte(TB, rcvdBytes, &rcvdCount);
-			if (s_verboseLogging) {
-				DEBUG_ASSERT(retVal == READER_OK);
-			}
             if (retVal != READER_OK) return READER_ERR;
 		}
 		if(READER_ATR_IsTCToRead(Y)){
 			retVal = READER_HAL_RcvChar(pSettings, READER_HAL_PROTOCOL_ANY, &TC, READER_ATR_DEFAULT_TIMEOUT);
 			if (s_verboseLogging) {
 				DEBUG_PRINT(("TC=%02X\n", TC));
-				DEBUG_ASSERT(retVal == READER_OK);
 			}
             if (retVal != READER_OK) return READER_ERR;
 			retVal = READER_ATR_ProcessTC(atr, TC, i, T);
-			if (s_verboseLogging) {
-				DEBUG_ASSERT(retVal == READER_OK);
-			}
             if (retVal != READER_OK) return READER_ERR;
 			retVal = READER_ATR_AddRcvdByte(TC, rcvdBytes, &rcvdCount);
-			if (s_verboseLogging) {
-				DEBUG_ASSERT(retVal == READER_OK);
-			}
             if (retVal != READER_OK) return READER_ERR;
 		}
 		if(READER_ATR_IsTDToRead(Y)){
 			retVal = READER_HAL_RcvChar(pSettings, READER_HAL_PROTOCOL_ANY, &TD, READER_ATR_DEFAULT_TIMEOUT);
 			if (s_verboseLogging) {
 				DEBUG_PRINT(("TD=%02X\n", TD));
-				DEBUG_ASSERT(retVal == READER_OK);
 			}
             if (retVal != READER_OK) return READER_ERR;
 			Y = READER_ATR_ComputeY(TD);
 			T = READER_ATR_ComputeT(TD);
 			READER_ATR_ProcessT(atr, T);
 			retVal = READER_ATR_AddRcvdByte(TD, rcvdBytes, &rcvdCount);
-			if (s_verboseLogging) {
-				DEBUG_ASSERT(retVal == READER_OK);
-			}
             if (retVal != READER_OK) return READER_ERR;
 		}
 		else{
@@ -155,16 +123,12 @@ READER_Status READER_ATR_Receive(READER_ATR_Atr *atr, READER_HAL_CommSettings *p
 		retVal = READER_HAL_RcvChar(pSettings, READER_HAL_PROTOCOL_ANY, &byte, READER_ATR_DEFAULT_TIMEOUT);
 		if (s_verboseLogging) {
 			DEBUG_PRINT(("byte=%02X\n", byte));
-			DEBUG_ASSERT(retVal == READER_OK);
 		}
 		if(retVal != READER_OK) return retVal;
 		
 		atr->histBytes[j] = byte;
 		
 		retVal = READER_ATR_AddRcvdByte(byte, rcvdBytes, &rcvdCount);
-		if (s_verboseLogging) {
-			DEBUG_ASSERT(retVal == READER_OK);
-		}
 		if(retVal != READER_OK) return retVal;
 	}
 	
@@ -175,15 +139,11 @@ READER_Status READER_ATR_Receive(READER_ATR_Atr *atr, READER_HAL_CommSettings *p
 		retVal = READER_HAL_RcvChar(pSettings, READER_HAL_PROTOCOL_ANY, &checkByte, READER_ATR_DEFAULT_TIMEOUT);
 		if (s_verboseLogging) {
 			DEBUG_PRINT(("checkByte=%02X\n", checkByte));
-			DEBUG_ASSERT(retVal == READER_OK);
 		}
 		if(retVal != READER_OK) return retVal;	
 		
 		/* Verification des caracteres recus avec le TCK */
 		retVal = READER_ATR_CheckTCK(rcvdBytes, rcvdCount, checkByte);
-		if (s_verboseLogging) {
-			DEBUG_ASSERT(retVal == READER_OK);
-		}
 		if(retVal != READER_OK) return retVal;
 	}
 	
