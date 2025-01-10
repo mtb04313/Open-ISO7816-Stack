@@ -17,7 +17,10 @@
 #include "reader_atr.h"
 #include "reader_t0_context_handler.h"
 
-
+#ifdef __cplusplus
+extern "C"
+{
+#endif
 
 READER_Status READER_T0_APDU_Init(READER_T0_ContextHandler *pContext, READER_HAL_CommSettings *pSettings);
 READER_Status READER_T0_APDU_Execute(READER_T0_ContextHandler *pContext, READER_APDU_Command *pApduCmd, READER_APDU_Response *pApduResp);
@@ -37,5 +40,8 @@ READER_Status READER_T0_APDU_RcvResponse(READER_T0_ContextHandler *pContext, uin
 
 READER_Status READER_T0_APDU_MapTpduRespToApdu(READER_T0_ContextHandler *pContext, READER_TPDU_Response *pTpduResp, READER_APDU_Response *pApduResp);
 
+#ifdef __cplusplus
+}
+#endif
 
 #endif

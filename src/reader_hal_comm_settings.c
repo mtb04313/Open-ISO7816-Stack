@@ -26,6 +26,12 @@ extern SMARTCARD_HandleTypeDef smartcardHandleStruct;
 
 #endif
 
+READER_Status READER_HAL_SetUartBaudRateMultiplier(READER_HAL_CommSettings *pSettings, float uartBaudRateMultiplier){
+	pSettings->uartBaudRateMultiplier = uartBaudRateMultiplier;
+
+	return READER_OK;
+}
+
 /**
  * \fn READER_HAL_SetFreq(READER_HAL_CommSettings *pSettings, uint32_t newFreq)
  * \return READER_Status execution code. READER_OK indicates successful execution. Any other value is an error.
@@ -56,7 +62,9 @@ READER_Status READER_HAL_SetFreq(READER_HAL_CommSettings *pSettings, uint32_t ne
 	oldFreq = HAL_GetDefaultPwmClkfreq();
 	DEBUG_ASSERT(oldFreq == newFreq);
 
-	newBaudRate = oldBaudRate = HAL_GetDefaultUartBaudRate();
+	(void)oldBaudRate;	// unused
+
+	newBaudRate = HAL_GetDefaultUartBaudRate() * pSettings->uartBaudRateMultiplier;
 
 	HAL_SetBitRate(	0,   // slotNumber
 					newFreq,
@@ -228,6 +236,9 @@ uint32_t READER_HAL_GetGTMili(READER_HAL_CommSettings *pSettings){
 	return GTMilli;
 }
 
+float READER_HAL_GetUartBaudRateMultiplier(READER_HAL_CommSettings *pSettings){
+	return pSettings->uartBaudRateMultiplier;
+}
 
 /**
  * \fn READER_HAL_GetFreq(READER_HAL_CommSettings *pSettings)

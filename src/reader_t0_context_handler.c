@@ -135,6 +135,31 @@ READER_Status READER_T0_CONTEXT_GetHalCommSettingsGT(READER_T0_ContextHandler *p
 	return READER_OK;
 }
 
+/**
+ * \fn READER_T0_CONTEXT_SetHalCommSettingsFreq(READER_T0_ContextHandler *pContext, uint32_t freq)
+ * \return READER_Status execution code. READER_OK indicates successful execution. Any other value is an error.
+ * \param *pContext is a pointer over a READER_T0_ContextHandler data structure storing the current T=0 communication context.
+ * \param freq is the new frequency (in Hz) to be applied to the CLK line (system clock provided to the smartcard). Currently, only a finite set of CLK values are supported. See implementation of the READER_UTILS_ComputePrescFromFreq() function for additional information.
+ * This function is intended to define (or update) the system clock frequency provided to the smartcard.
+ */
+READER_Status READER_T0_CONTEXT_SetHalCommSettingsUartBaudRateMultiplier(READER_T0_ContextHandler *pContext, float uartBaudRateMultiplier){
+	READER_HAL_CommSettings *pCommSettings;
+	READER_Status retVal;
+
+
+	if(uartBaudRateMultiplier == 0){
+		return READER_BAD_ARG;
+	}
+
+	retVal = READER_T0_CONTEXT_GetHalCommSettingsPtr(pContext, &pCommSettings);
+	if(retVal != READER_OK) return READER_ERR;
+
+	retVal = READER_HAL_SetUartBaudRateMultiplier(pCommSettings, uartBaudRateMultiplier);
+	if(retVal != READER_OK) return READER_ERR;
+
+
+	return READER_OK;
+}
 
 /**
  * \fn READER_T0_CONTEXT_SetHalCommSettingsFreq(READER_T0_ContextHandler *pContext, uint32_t freq)
@@ -250,17 +275,20 @@ READER_Status READER_T0_CONTEXT_ImportHalCommSettingsToContext(READER_T0_Context
 	READER_HAL_CommSettings *pCommSettings;
 	READER_Status retVal;
 	uint32_t freq, Fi, Di, GT;
-	
-	
+	float uartBaudRateMultiplier;
+
+	uartBaudRateMultiplier = READER_HAL_GetUartBaudRateMultiplier(pSettings);
 	freq = READER_HAL_GetFreq(pSettings);
 	Fi = READER_HAL_GetFi(pSettings);
 	Di = READER_HAL_GetDi(pSettings);
 	GT = READER_HAL_GetGT(pSettings);
-	
-	
+
 	retVal = READER_T0_CONTEXT_GetHalCommSettingsPtr(pContext, &pCommSettings);
 	if(retVal != READER_OK) return READER_ERR;
-	
+
+	retVal = READER_T0_CONTEXT_SetHalCommSettingsUartBaudRateMultiplier(pContext, uartBaudRateMultiplier);
+	if(retVal != READER_OK) return READER_ERR;
+
 	retVal = READER_T0_CONTEXT_SetHalCommSettingsFreq(pContext, freq);
 	if(retVal != READER_OK) return READER_ERR;
 	
@@ -272,7 +300,6 @@ READER_Status READER_T0_CONTEXT_ImportHalCommSettingsToContext(READER_T0_Context
 	
 	retVal = READER_T0_CONTEXT_SetHalCommSettingsGT(pContext, GT);
 	if(retVal != READER_OK) return READER_ERR;
-	
 	
 	return READER_OK;
 }

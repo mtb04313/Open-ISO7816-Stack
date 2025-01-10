@@ -12,6 +12,10 @@
 #include "reader_utils.h"
 #include "reader.h"
 
+#ifdef __cplusplus
+extern "C"
+{
+#endif
 
 #ifndef TEST
 
@@ -61,5 +65,8 @@ READER_Status READER_PERIPH_InitPwrLine(void);
 
 void READER_PERIPH_ErrHandler(void);
 
+#ifdef __cplusplus
+}
+#endif
 
 #endif

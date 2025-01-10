@@ -10,7 +10,10 @@
 
 #include "reader_t1.h"
 
-
+#ifdef __cplusplus
+extern "C"
+{
+#endif
 
 READER_Status READER_T1_ERR_DealWithError(READER_T1_ContextHandler *pContext, uint32_t integrityFlag);
 
@@ -31,5 +34,8 @@ READER_Status READER_T1_ERR_DoResynch(READER_T1_ContextHandler *pContext);
 
 READER_Status READER_T1_ERR_DoReset(READER_T1_ContextHandler *pContext);
 
+#ifdef __cplusplus
+}
+#endif
 
 #endif

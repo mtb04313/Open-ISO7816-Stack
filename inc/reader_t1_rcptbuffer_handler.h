@@ -11,11 +11,17 @@
 #include "reader.h"
 #include "reader_t1_context_handler.h"
 
+#ifdef __cplusplus
+extern "C"
+{
+#endif
 
 READER_Status READER_T1_RCPTBUFF_Init(READER_T1_ContextHandler *pContext);
 READER_Status READER_T1_RCPTBUFF_ExtractDataFromIBlock(READER_T1_ContextHandler *pContext, READER_T1_Block *pBlock);
 READER_Status READER_T1_RCPTBUFF_CreateAPDUResp(READER_T1_ContextHandler *pContext, READER_APDU_Response *pApduResp);
 
-
+#ifdef __cplusplus
+}
+#endif
 
 #endif

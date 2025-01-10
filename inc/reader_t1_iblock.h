@@ -11,7 +11,10 @@
 #include "reader.h"
 #include "reader_t1_block.h"
 
-
+#ifdef __cplusplus
+extern "C"
+{
+#endif
 
 typedef enum READER_T1_SeqNumber READER_T1_SeqNumber;
 enum READER_T1_SeqNumber{
@@ -37,5 +40,9 @@ READER_T1_MBit READER_T1_GetBlockMBit(READER_T1_Block *pBlock);
 READER_Status READER_T1_ForgeIBlock(READER_T1_Block *pBlock, uint8_t *data, uint32_t dataSize, READER_T1_SeqNumber seq, READER_T1_MBit mBit, READER_T1_RedundancyType rType);
 
 READER_Status READER_T1_CheckIBlock(READER_T1_Block *pBlock);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

@@ -11,7 +11,10 @@
 
 #include "reader_t1.h"
 
-
+#ifdef __cplusplus
+extern "C"
+{
+#endif
 
 #define READER_T1_BUFFER_MAXBYTES READER_APDU_CMD_MAX_TOTALSIZE + 3*(READER_T1_RBLOCK_MAXSIZE) + 3*(READER_T1_SBLOCK_MAXSIZE)
 
@@ -57,5 +60,9 @@ READER_Status READER_T1_BUFFER_IncIBlockCount(READER_T1_ContextHandler *pContext
 READER_Status READER_T1_BUFFER_DecIBlockCount(READER_T1_ContextHandler *pContext);
 
 READER_Status READER_T1_BUFFER_GetRBlockAndSBlockCount(READER_T1_ContextHandler *pContext, uint32_t *pCount);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

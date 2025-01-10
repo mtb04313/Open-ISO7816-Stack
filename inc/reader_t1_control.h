@@ -11,7 +11,10 @@
 
 #include "reader_t1.h"
 
-
+#ifdef __cplusplus
+extern "C"
+{
+#endif
 
 READER_Status READER_T1_CONTROL_CheckRBlockIsValid(READER_T1_Block *pBlock);
 READER_Status READER_T1_CONTROL_IsSeqNumValid(READER_T1_ContextHandler *pContext, READER_T1_Block *pBlock);
@@ -61,5 +64,8 @@ READER_Status READER_T1_CONTROL_SBlockResponseNotReceived(READER_T1_ContextHandl
 READER_Status READER_T1_CONTROL_CheckExpectedINF(READER_T1_ContextHandler *pContext, READER_T1_Block *pRcvdSBlockResp);
 READER_Status READER_T1_CONTROL_CheckIfThisSBlockResponseIsCorrect(READER_T1_ContextHandler *pContext, READER_T1_Block *pRcvdSBlockResp);
 
+#ifdef __cplusplus
+}
+#endif
 
 #endif

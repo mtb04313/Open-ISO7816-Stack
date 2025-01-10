@@ -14,7 +14,10 @@
 #include "reader_hal_comm_settings.h"
 #include "reader.h"
 
-
+#ifdef __cplusplus
+extern "C"
+{
+#endif
 
 
 #define READER_T0_CONTEXT_DEFAULT_WI         (uint32_t)(10)
@@ -37,6 +40,7 @@ READER_Status READER_T0_CONTEXT_GetHalCommSettingsFi(READER_T0_ContextHandler *p
 READER_Status READER_T0_CONTEXT_GetHalCommSettingsDi(READER_T0_ContextHandler *pContext, uint32_t *pDi);
 READER_Status READER_T0_CONTEXT_GetHalCommSettingsGT(READER_T0_ContextHandler *pContext, uint32_t *pGT);
 
+READER_Status READER_T0_CONTEXT_SetHalCommSettingsUartBaudRateMultiplier(READER_T0_ContextHandler *pContext, float uartBaudRateMultiplier);
 READER_Status READER_T0_CONTEXT_SetHalCommSettingsFreq(READER_T0_ContextHandler *pContext, uint32_t freq);
 READER_Status READER_T0_CONTEXT_SetHalCommSettingsFi(READER_T0_ContextHandler *pContext, uint32_t Fi);
 READER_Status READER_T0_CONTEXT_SetHalCommSettingsDi(READER_T0_ContextHandler *pContext, uint32_t Di);
@@ -52,5 +56,9 @@ READER_Status READER_T0_CONTEXT_GetCurrentWI(READER_T0_ContextHandler *pContext,
 READER_Status READER_T0_CONTEXT_GetCurrentWTMilli(READER_T0_ContextHandler *pContext, uint32_t *pCurrentWT);
 
 READER_Status READER_T0_CONTEXT_SetCurrentWI(READER_T0_ContextHandler *pContext, uint32_t newWI);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

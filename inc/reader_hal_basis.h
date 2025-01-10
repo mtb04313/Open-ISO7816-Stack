@@ -13,7 +13,10 @@
 #include "reader_hal_comm_settings.h"
 #include <stdint.h>
 
-
+#ifdef __cplusplus
+extern "C"
+{
+#endif
 
 /**
  * \enum READER_HAL_State
@@ -53,5 +56,8 @@ READER_Status READER_HAL_SetIOLine(READER_HAL_State state);
 void READER_HAL_Delay(uint32_t tMili);
 uint32_t READER_HAL_GetTick(void);
 
+#ifdef __cplusplus
+}
+#endif
 
 #endif

@@ -15,7 +15,10 @@
 #include "reader_t1_context_handler.h"
 #include "reader_apdu.h"
 
-
+#ifdef __cplusplus
+extern "C"
+{
+#endif
 
 
 READER_Status READER_T1_FORGE_ChainingRBlockForCard(READER_T1_ContextHandler *pContext, READER_T1_Block *pBlockDest);
@@ -59,5 +62,8 @@ READER_Status READER_T1_FORGE_SBlockAbortResponse(READER_T1_ContextHandler *pCon
 READER_Status READER_T1_FORGE_SBlockWtxRequest(READER_T1_ContextHandler *pContext, READER_T1_Block *pBlock, uint8_t wtMultiplier);
 READER_Status READER_T1_FORGE_SBlockWtxResponse(READER_T1_ContextHandler *pContext, READER_T1_Block *pBlock, uint8_t wtMultiplier);
 
+#ifdef __cplusplus
+}
+#endif
 
 #endif

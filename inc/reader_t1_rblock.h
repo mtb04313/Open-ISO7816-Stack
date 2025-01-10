@@ -12,6 +12,10 @@
 #include "reader.h"
 #include "reader_t1_block.h"
 
+#ifdef __cplusplus
+extern "C"
+{
+#endif
 
 #define READER_T1_RBLOCK_MAXSIZE   (READER_T1_BLOCK_PROLOGUE_SIZE + READER_T1_BLOCK_EPILOGUE_MAXSIZE + 0)
 
@@ -43,5 +47,8 @@ READER_T1_ExpSeqNumber READER_T1_GetExpectedBlockSeqNumber(READER_T1_Block *pBlo
 READER_Status READER_T1_ForgeRBlock(READER_T1_Block *pBlock, READER_T1_ACKType ack, READER_T1_ExpSeqNumber expctdBlockSeq, READER_T1_RedundancyType rType);
 READER_Status READER_T1_CheckRBlock(READER_T1_Block *pBlock);
 
+#ifdef __cplusplus
+}
+#endif
 
 #endif

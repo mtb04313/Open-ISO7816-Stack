@@ -13,12 +13,15 @@
 #include "reader.h"
 #include "reader_hal_comm_settings.h"
 
-
-
+#ifdef __cplusplus
+extern "C"
+{
+#endif
 
 #define READER_ATR_MAX_HIST_BYTES        15
 #define READER_ATR_MAX_SPECIFIC_BYTES    8
 #define READER_ATR_VALUE_NOT_INDICATED   0
+#define READER_ATR_VALUE_INVALID         0xFF
 #define READER_ATR_MAX_SIZE              32
 #define READER_ATR_INDICATED             1
 #define READER_ATR_NOT_INDICATED         0
@@ -85,7 +88,7 @@ struct READER_ATR_Atr{
 	uint32_t Fi;
 	uint32_t Di;
 	uint32_t fMax;
-	uint8_t N;
+	uint8_t N;	// extra guard time integer
 	READER_ATR_ClockStopIndicator clockStopIndicator;
 	READER_ATR_ClassIndicator classIndicator;
 	READER_ATR_UseOfSPU useOfSPU;
@@ -97,6 +100,12 @@ struct READER_ATR_Atr{
 	uint32_t isT0Indicated;
 	uint32_t isT1Indicated;
 	uint32_t isT15Indicated;
+	uint8_t TA1;
+	uint8_t T0Protocol_WI;
+	uint8_t T1Protocol_IFSC;
+	uint8_t T1Protocol_BWI;
+	uint8_t T1Protocol_CWI;
+	uint8_t T1Protocol_RedundancyType;
 };
 
 
@@ -130,10 +139,12 @@ READER_ATR_ClockStopIndicator READER_ATR_GetClockStopIndic(uint8_t TA15);
 READER_ATR_ClassIndicator READER_ATR_GetClassIndic(uint8_t TA15);
 READER_ATR_UseOfSPU READER_ATR_GetUseSPU(uint8_t TB15);
 READER_ATR_EncodingConv READER_ATR_GetEncoding(uint8_t TS);
-uint32_t READER_ATR_GetBWI(READER_ATR_Atr *pAtr);
-uint32_t READER_ATR_GetRedundancyType(READER_ATR_Atr *pAtr);
-uint32_t READER_ATR_GetIFSC(READER_ATR_Atr *pAtr);
-uint32_t READER_ATR_GetWI(READER_ATR_Atr *pAtr);
+
+READER_Status READER_ATR_GetT0WI(READER_ATR_Atr *atr, uint8_t *wi);
+READER_Status READER_ATR_GetT1BWI(READER_ATR_Atr *atr, uint8_t *bwi);
+READER_Status READER_ATR_GetT1CWI(READER_ATR_Atr *atr, uint8_t *cwi);
+READER_Status READER_ATR_GetT1RedundancyType(READER_ATR_Atr *atr, uint8_t *type);
+READER_Status READER_ATR_GetT1IFSC(READER_ATR_Atr *atr, uint8_t *ifsc);
 
 READER_Status READER_ATR_Receive(READER_ATR_Atr *atr, READER_HAL_CommSettings *pSettings);
 READER_Status READER_ATR_InitStruct(READER_ATR_Atr *atr);
@@ -142,5 +153,9 @@ READER_Status READER_ATR_ApplySettings(READER_ATR_Atr *atr);
 void READER_ATR_ErrHandler(void);
 
 READER_Status READER_ATR_CheckTS(uint8_t TS);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

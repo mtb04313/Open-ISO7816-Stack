@@ -34,9 +34,6 @@ READER_Status READER_ATR_Receive(READER_ATR_Atr *atr, READER_HAL_CommSettings *p
 	
 	/* Initialisation des certains elements de la structure ATR */
 	retVal = READER_ATR_InitStruct(atr);
-	if (s_verboseLogging) {
-		DEBUG_ASSERT(retVal == READER_OK);
-	}
 	if(retVal != READER_OK) return retVal;
 		
 	
@@ -69,7 +66,7 @@ READER_Status READER_ATR_Receive(READER_ATR_Atr *atr, READER_HAL_CommSettings *p
 		if(READER_ATR_IsTAToRead(Y)){
 			retVal = READER_HAL_RcvChar(pSettings, READER_HAL_PROTOCOL_ANY, &TA, READER_ATR_DEFAULT_TIMEOUT);
 			if (s_verboseLogging) {
-				DEBUG_PRINT(("TA=%02X\n", TA));
+				DEBUG_PRINT(("TA%lu=%02X\n", i, TA));
 			}
 			if (retVal != READER_OK) return READER_ERR;
 			retVal = READER_ATR_ProcessTA(atr, TA, i, T);
@@ -80,8 +77,7 @@ READER_Status READER_ATR_Receive(READER_ATR_Atr *atr, READER_HAL_CommSettings *p
 		if(READER_ATR_IsTBToRead(Y)){
 			retVal = READER_HAL_RcvChar(pSettings, READER_HAL_PROTOCOL_ANY, &TB, READER_ATR_DEFAULT_TIMEOUT);
 			if (s_verboseLogging) {
-				DEBUG_PRINT(("TB=%02X\n", TB));
-				DEBUG_ASSERT(retVal == READER_OK);
+				DEBUG_PRINT(("TB%lu=%02X\n", i, TB));
 			}
             if (retVal != READER_OK) return READER_ERR;
 			retVal = READER_ATR_ProcessTB(atr, TB, i, T);
@@ -92,7 +88,7 @@ READER_Status READER_ATR_Receive(READER_ATR_Atr *atr, READER_HAL_CommSettings *p
 		if(READER_ATR_IsTCToRead(Y)){
 			retVal = READER_HAL_RcvChar(pSettings, READER_HAL_PROTOCOL_ANY, &TC, READER_ATR_DEFAULT_TIMEOUT);
 			if (s_verboseLogging) {
-				DEBUG_PRINT(("TC=%02X\n", TC));
+				DEBUG_PRINT(("TC%lu=%02X\n", i, TC));
 			}
             if (retVal != READER_OK) return READER_ERR;
 			retVal = READER_ATR_ProcessTC(atr, TC, i, T);
@@ -102,12 +98,17 @@ READER_Status READER_ATR_Receive(READER_ATR_Atr *atr, READER_HAL_CommSettings *p
 		}
 		if(READER_ATR_IsTDToRead(Y)){
 			retVal = READER_HAL_RcvChar(pSettings, READER_HAL_PROTOCOL_ANY, &TD, READER_ATR_DEFAULT_TIMEOUT);
-			if (s_verboseLogging) {
-				DEBUG_PRINT(("TD=%02X\n", TD));
-			}
             if (retVal != READER_OK) return READER_ERR;
 			Y = READER_ATR_ComputeY(TD);
 			T = READER_ATR_ComputeT(TD);
+			if (s_verboseLogging) {
+				if (i == 1) {
+					DEBUG_PRINT(("TD%lu=%02X <-- T=%u\n", i, TD, T));
+				}
+				else {
+					DEBUG_PRINT(("TD%lu=%02X\n", i, TD));
+				}
+			}
 			READER_ATR_ProcessT(atr, T);
 			retVal = READER_ATR_AddRcvdByte(TD, rcvdBytes, &rcvdCount);
             if (retVal != READER_OK) return READER_ERR;
@@ -121,9 +122,6 @@ READER_Status READER_ATR_Receive(READER_ATR_Atr *atr, READER_HAL_CommSettings *p
 	/* Recuperation de tous les Historical Bytes */
 	for(j=0; j<atr->K; j++){
 		retVal = READER_HAL_RcvChar(pSettings, READER_HAL_PROTOCOL_ANY, &byte, READER_ATR_DEFAULT_TIMEOUT);
-		if (s_verboseLogging) {
-			DEBUG_PRINT(("byte=%02X\n", byte));
-		}
 		if(retVal != READER_OK) return retVal;
 		
 		atr->histBytes[j] = byte;
@@ -132,13 +130,20 @@ READER_Status READER_ATR_Receive(READER_ATR_Atr *atr, READER_HAL_CommSettings *p
 		if(retVal != READER_OK) return retVal;
 	}
 	
-	
+	if (s_verboseLogging) {
+	    DEBUG_PRINT(("HistoricalBytes: "));
+	    for (j=0; j<atr->K; j++) {
+	        DEBUG_PRINT(("%02X ", atr->histBytes[j]));
+	    }
+	    DEBUG_PRINT(("\n"));
+	}
+
 	/* Recuperation du Check Byte */
 	/* La presence du check byte n'est pas systematique, voir ISO7816-3 section 8.2.5. */
 	if(!(READER_ATR_IsT0(atr) && !READER_ATR_IsT15(atr))){
 		retVal = READER_HAL_RcvChar(pSettings, READER_HAL_PROTOCOL_ANY, &checkByte, READER_ATR_DEFAULT_TIMEOUT);
 		if (s_verboseLogging) {
-			DEBUG_PRINT(("checkByte=%02X\n", checkByte));
+			DEBUG_PRINT(("TCK=%02X\n", checkByte));
 		}
 		if(retVal != READER_OK) return retVal;	
 		
@@ -212,6 +217,13 @@ READER_Status READER_ATR_InitStruct(READER_ATR_Atr *atr){
 		atr->histBytes[j] = 0x00;
 	}
 	
+	atr->TA1 = READER_ATR_VALUE_NOT_INDICATED;
+	atr->T0Protocol_WI   = READER_ATR_VALUE_INVALID;
+	atr->T1Protocol_IFSC = READER_ATR_VALUE_INVALID;
+	atr->T1Protocol_BWI  = READER_ATR_VALUE_INVALID;
+	atr->T1Protocol_CWI  = READER_ATR_VALUE_INVALID;
+	atr->T1Protocol_RedundancyType = READER_ATR_VALUE_INVALID;
+
 	return READER_OK;
 }
 
@@ -396,6 +408,7 @@ READER_Status READER_ATR_ProcessTA(READER_ATR_Atr *atr, uint8_t TA, uint32_t i, 
 		atr->Fi = READER_ATR_ComputeFi(TA);
 		atr->Di = READER_ATR_ComputeDi(TA);
 		atr->fMax = READER_ATR_ComputeFMax(TA);
+		atr->TA1 = TA;
 	}
 	else if(T == 15){    /* Global Interface Byte */
 		atr->clockStopIndicator = READER_ATR_GetClockStopIndic(TA);
@@ -408,6 +421,10 @@ READER_Status READER_ATR_ProcessTA(READER_ATR_Atr *atr, uint8_t TA, uint32_t i, 
 	else if(T == 1){
 		atr->T1Protocol.TABytes[atr->T1Protocol.TABytesCount] = TA;
 		atr->T1Protocol.TABytesCount++;
+
+		if(i == 3){ // T=1 Protocol: TA3 is IFSC byte
+			atr->T1Protocol_IFSC = TA;
+		}
 	}
 	else{
 		return READER_ERR;
@@ -430,6 +447,11 @@ READER_Status READER_ATR_ProcessTB(READER_ATR_Atr *atr, uint8_t TB, uint32_t i, 
 	else if(T == 1){
 		atr->T1Protocol.TBBytes[atr->T1Protocol.TBBytesCount] = TB;
 		atr->T1Protocol.TBBytesCount++;
+
+		if(i == 3){ // T=1 Protocol: TB3 is 'BWI and CWI' byte
+			atr->T1Protocol_BWI = (TB & 0xF0) >> 4;	// upper nibble
+			atr->T1Protocol_CWI = (TB & 0x0F);		// lower nibble
+		}
 	}
 	else{
 		return READER_ERR;
@@ -445,10 +467,18 @@ READER_Status READER_ATR_ProcessTC(READER_ATR_Atr *atr, uint8_t TC, uint32_t i, 
 	else if(T == 0){
 		atr->T0Protocol.TCBytes[atr->T0Protocol.TCBytesCount] = TC;
 		atr->T0Protocol.TCBytesCount++;
+
+		if(i == 2){ // T=0 Protocol: TC2 is 'Waiting Time Integer' byte
+			atr->T0Protocol_WI = TC;
+		}
 	}
 	else if(T == 1){
 		atr->T1Protocol.TCBytes[atr->T1Protocol.TCBytesCount] = TC;
 		atr->T1Protocol.TCBytesCount++;
+
+		if(i == 3){ // T=1 Protocol: TC3 is 'Redundancy Type' byte
+			atr->T1Protocol_RedundancyType = TC;
+		}
 	}
 	else{
 		return READER_ERR;
@@ -502,4 +532,54 @@ READER_Status READER_ATR_AddRcvdByte(uint8_t byte, uint8_t *byteList, uint32_t *
 	(*byteCount)++;
 	
 	return READER_OK;
+}
+
+READER_Status READER_ATR_GetT0WI(READER_ATR_Atr *atr, uint8_t *wi){
+	READER_Status retVal = READER_ERR;
+
+	if (atr->T0Protocol_WI != READER_ATR_VALUE_INVALID) {
+		*wi = atr->T0Protocol_WI;
+		retVal = READER_OK;
+	}
+	return retVal;
+}
+
+READER_Status READER_ATR_GetT1BWI(READER_ATR_Atr *atr, uint8_t *bwi){
+	READER_Status retVal = READER_ERR;
+
+	if (atr->T1Protocol_BWI != READER_ATR_VALUE_INVALID) {
+		*bwi = atr->T1Protocol_BWI;
+		retVal = READER_OK;
+	}
+	return retVal;
+}
+
+READER_Status READER_ATR_GetT1CWI(READER_ATR_Atr *atr, uint8_t *cwi){
+	READER_Status retVal = READER_ERR;
+
+	if (atr->T1Protocol_CWI != READER_ATR_VALUE_INVALID) {
+		*cwi = atr->T1Protocol_CWI;
+		retVal = READER_OK;
+	}
+	return retVal;
+}
+
+READER_Status READER_ATR_GetT1RedundancyType(READER_ATR_Atr *atr, uint8_t *type){
+	READER_Status retVal = READER_ERR;
+
+	if (atr->T1Protocol_RedundancyType != READER_ATR_VALUE_INVALID) {
+		*type = atr->T1Protocol_RedundancyType;
+		retVal = READER_OK;
+	}
+	return retVal;
+}
+
+READER_Status READER_ATR_GetT1IFSC(READER_ATR_Atr *atr, uint8_t *ifsc){
+	READER_Status retVal = READER_ERR;
+
+	if (atr->T1Protocol_IFSC != READER_ATR_VALUE_INVALID) {
+		*ifsc = atr->T1Protocol_IFSC;
+		retVal = READER_OK;
+	}
+	return retVal;
 }

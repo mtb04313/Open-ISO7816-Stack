@@ -9,7 +9,10 @@
 #ifndef __READER_APDU_H__
 #define __READER_APDU_H__
 
-
+#ifdef __cplusplus
+extern "C"
+{
+#endif
 
 
 #define READER_APDU_INS_ENVELOPE         (uint8_t)(0xC2)
@@ -155,5 +158,8 @@ uint16_t READER_APDU_NeToLe(uint16_t Ne);
 uint16_t READER_APDU_LcToNc(uint16_t Lc);
 uint16_t READER_APDU_LeToNe(uint16_t Le);
 
+#ifdef __cplusplus
+}
+#endif
 
 #endif

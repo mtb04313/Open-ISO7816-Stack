@@ -1609,6 +1609,24 @@ READER_Status READER_T1_CONTEXT_GetHalCommSettingsGT(READER_T1_ContextHandler *p
 	return READER_OK;
 }
 
+READER_Status READER_T1_CONTEXT_SetHalCommSettingsUartBaudRateMultiplier(READER_T1_ContextHandler *pContext, float uartBaudRateMultiplier){
+	READER_HAL_CommSettings *pCommSettings;
+	READER_Status retVal;
+
+
+	if(uartBaudRateMultiplier == 0){
+		return READER_BAD_ARG;
+	}
+
+	retVal = READER_T1_CONTEXT_GetHalCommSettingsPtr(pContext, &pCommSettings);
+	if(retVal != READER_OK) return READER_ERR;
+
+	retVal = READER_HAL_SetUartBaudRateMultiplier(pCommSettings, uartBaudRateMultiplier);
+	if(retVal != READER_OK) return READER_ERR;
+
+
+	return READER_OK;
+}
 
 READER_Status READER_T1_CONTEXT_SetHalCommSettingsFreq(READER_T1_ContextHandler *pContext, uint32_t freq){
 	READER_HAL_CommSettings *pCommSettings;
@@ -1690,8 +1708,9 @@ READER_Status READER_T1_CONTEXT_ImportHalCommSettingsToContext(READER_T1_Context
 	READER_HAL_CommSettings *pCommSettings;
 	READER_Status retVal;
 	uint32_t freq, Fi, Di, GT;
+	float uartBaudRateMultiplier;
 	
-	
+	uartBaudRateMultiplier = READER_HAL_GetUartBaudRateMultiplier(pSettings);
 	freq = READER_HAL_GetFreq(pSettings);
 	Fi = READER_HAL_GetFi(pSettings);
 	Di = READER_HAL_GetDi(pSettings);
@@ -1701,6 +1720,8 @@ READER_Status READER_T1_CONTEXT_ImportHalCommSettingsToContext(READER_T1_Context
 	retVal = READER_T1_CONTEXT_GetHalCommSettingsPtr(pContext, &pCommSettings);
 	if(retVal != READER_OK) return READER_ERR;
 	
+	retVal = READER_T1_CONTEXT_SetHalCommSettingsUartBaudRateMultiplier(pContext, uartBaudRateMultiplier);
+	if(retVal != READER_OK) return READER_ERR;
 	
 	retVal = READER_T1_CONTEXT_SetHalCommSettingsFreq(pContext, freq);
 	if(retVal != READER_OK) return READER_ERR;

@@ -11,6 +11,10 @@
 #include "reader.h"
 #include "reader_t1_block.h"
 
+#ifdef __cplusplus
+extern "C"
+{
+#endif
 
 #define READER_T1_SBLOCK_MAXSIZE (READER_T1_BLOCK_PROLOGUE_SIZE + 1 + READER_T1_BLOCK_EPILOGUE_MAXSIZE)
 
@@ -39,5 +43,8 @@ READER_Status READER_T1_IsSBlockRequest(READER_T1_Block *pBlock);
 READER_Status READER_T1_IsSBlockResponse(READER_T1_Block *pBlock);
 READER_Status READER_T1_CheckSBlock(READER_T1_Block *pBlock);
 
+#ifdef __cplusplus
+}
+#endif
 
 #endif

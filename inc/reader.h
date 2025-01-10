@@ -12,7 +12,10 @@
 #include <stdint.h>
 #include <stddef.h>
 
-
+#ifdef __cplusplus
+extern "C"
+{
+#endif
 
 /**
  * \enum READER_Status
@@ -46,5 +49,8 @@ enum READER_Status{
 	READER_INVALID_PROCEDURE_BYTE   = (uint32_t)(0x00000016)
 };
 
+#ifdef __cplusplus
+}
+#endif
 
 #endif

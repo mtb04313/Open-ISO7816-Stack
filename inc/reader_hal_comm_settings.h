@@ -14,12 +14,16 @@
 #include "reader.h"
 #include "reader_utils.h"
 
-
+#ifdef __cplusplus
+extern "C"
+{
+#endif
 
 #define READER_HAL_DEFAULT_FI         (uint32_t)(372)
 #define READER_HAL_DEFAULT_DI         (uint32_t)(1)
 
 #define READER_HAL_DEFAULT_GT         (uint32_t)(12)
+#define READER_HAL_DEFAULT_UART_BAUD_RATE_MULTIPLIER	1
 
 #ifdef TARGET_STM32F411
     #define READER_HAL_DEFAULT_FREQ       (uint32_t)(4200000)
@@ -53,11 +57,11 @@ struct READER_HAL_CommSettings{
 	uint32_t Fi;    /*!< Fi is the clock rate conversion integer as defined in ISO7816-3 section 7.1. */
 	uint32_t Di;    /*!< Di is the baud rate adjustement integer as defined in ISO7816-3 section 7.1. */
 	uint32_t GT;    /*!< GT is the Guard Time between two characters as defined in ISO7816-3 section 7.2. */
+	float uartBaudRateMultiplier;	/*!< uartBaudRateMultiplier is the multiplier to adjust UART baud rate for PSoC devices */
 };
 
 
-
-
+READER_Status READER_HAL_SetUartBaudRateMultiplier(READER_HAL_CommSettings *pSettings, float uartBaudRateMultiplier);
 READER_Status READER_HAL_SetFreq(READER_HAL_CommSettings *pSettings, uint32_t newFreq);
 READER_Status READER_HAL_SetEtu(READER_HAL_CommSettings *pSettings, uint32_t Fi, uint32_t Di);
 READER_Status READER_HAL_SetGT(READER_HAL_CommSettings *pSettings, uint32_t newGT);
@@ -69,8 +73,11 @@ uint32_t READER_HAL_GetGTMili(READER_HAL_CommSettings *pSettings);
 uint32_t READER_HAL_GetFreq(READER_HAL_CommSettings *pSettings);
 uint32_t READER_HAL_GetFi(READER_HAL_CommSettings *pSettings);
 uint32_t READER_HAL_GetDi(READER_HAL_CommSettings *pSettings);
-
-
+float READER_HAL_GetUartBaudRateMultiplier(READER_HAL_CommSettings *pSettings);
 uint32_t READER_HAL_ComputePrescFromFreq(uint32_t freq);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

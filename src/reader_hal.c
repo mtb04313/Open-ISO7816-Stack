@@ -31,6 +31,8 @@ READER_Status READER_HAL_InitWithDefaults(READER_HAL_CommSettings *pSettings){
 	retVal = READER_HAL_SetFi(pSettings, READER_HAL_DEFAULT_FI);                           if(retVal != READER_OK) return retVal;
 	retVal = READER_HAL_SetDi(pSettings, READER_HAL_DEFAULT_DI);                           if(retVal != READER_OK) return retVal;
 	retVal = READER_HAL_SetEtu(pSettings, READER_HAL_DEFAULT_FI, READER_HAL_DEFAULT_DI);   if(retVal != READER_OK) return retVal;
+
+	retVal = READER_HAL_SetUartBaudRateMultiplier(pSettings, READER_HAL_DEFAULT_UART_BAUD_RATE_MULTIPLIER); if(retVal != READER_OK) return retVal;
 	retVal = READER_HAL_SetFreq(pSettings, READER_HAL_DEFAULT_FREQ);                       if(retVal != READER_OK) return retVal;
 
 	return READER_OK;

@@ -13,7 +13,10 @@
 #include "reader_apdu.h"
 #include "reader_t1_sblock.h"
 
-
+#ifdef __cplusplus
+extern "C"
+{
+#endif
 
 #define READER_T1_MAX_SREQUESTS 2
 
@@ -292,6 +295,7 @@ READER_Status READER_T1_CONTEXT_GetHalCommSettingsFi(READER_T1_ContextHandler *p
 READER_Status READER_T1_CONTEXT_GetHalCommSettingsDi(READER_T1_ContextHandler *pContext, uint32_t *pDi);
 READER_Status READER_T1_CONTEXT_GetHalCommSettingsGT(READER_T1_ContextHandler *pContext, uint32_t *pGT);
 
+READER_Status READER_T1_CONTEXT_SetHalCommSettingsUartBaudRateMultiplier(READER_T1_ContextHandler *pContext, float uartBaudRateMultiplier);
 READER_Status READER_T1_CONTEXT_SetHalCommSettingsFreq(READER_T1_ContextHandler *pContext, uint32_t freq);
 READER_Status READER_T1_CONTEXT_SetHalCommSettingsFi(READER_T1_ContextHandler *pContext, uint32_t Fi);
 READER_Status READER_T1_CONTEXT_SetHalCommSettingsDi(READER_T1_ContextHandler *pContext, uint32_t Di);
@@ -300,5 +304,9 @@ READER_Status READER_T1_CONTEXT_SetHalCommSettingsGT(READER_T1_ContextHandler *p
 
 READER_Status READER_T1_CONTEXT_ImportHalCommSettingsToContext(READER_T1_ContextHandler *pContext, READER_HAL_CommSettings *pSettings);
 READER_Status READER_T1_CONTEXT_ExportHalCommSettingsFromContext(READER_T1_ContextHandler *pContext, READER_HAL_CommSettings *pSettings);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
