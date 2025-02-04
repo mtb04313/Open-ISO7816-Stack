@@ -266,3 +266,18 @@ READER_Status READER_HAL_DoColdReset(void){
 	
 	return READER_OK;
 }
+
+/**
+ * \fn READER_Status READER_HAL_Shutdown(void)
+ * \return READER_Status execution code. READER_OK means nominal execution.
+ * This function performs a shutdown of the ICC and stack
+ */
+READER_Status READER_HAL_Shutdown(void){
+	if(READER_HAL_SetIOLine(READER_HAL_STATE_OFF) != READER_OK)       return READER_ERR;
+	if(READER_HAL_SetPwrLine(READER_HAL_STATE_OFF) != READER_OK)      return READER_ERR;
+	if(READER_HAL_SetRstLine(READER_HAL_STATE_OFF) != READER_OK)      return READER_ERR;
+	if(READER_HAL_SetClkLine(READER_HAL_STATE_OFF) != READER_OK)      return READER_ERR;
+
+	return READER_OK;
+}
+

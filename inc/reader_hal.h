@@ -29,6 +29,7 @@ READER_Status READER_HAL_RcvCharFrameCountTickstart(READER_HAL_CommSettings *pSe
 
 READER_Status READER_HAL_DoColdReset(void);
 void READER_HAL_ErrHandler(void);
+READER_Status READER_HAL_Shutdown(void);
 
 #ifdef __cplusplus
 }
